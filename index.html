@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>斗半匠期末冲刺 · 学情看板 (最新)</title>
+    <title>斗半匠期末冲刺 · 学情看板 (完整版)</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 React 和 ReactDOM -->
@@ -14,7 +14,6 @@
     
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; }
-        /* 自定义滚动条样式 */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -27,7 +26,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // --- 图标组件 (SVG) ---
+        // --- 图标组件 ---
         const IconWrapper = ({ children, className }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
                 {children}
@@ -45,9 +44,9 @@
         const Filter = ({ size = 20, className }) => <IconWrapper className={`w-5 h-5 ${className}`}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></IconWrapper>;
 
         // ----------------------------------------------------------------------
-        // 1. 数据源 (基于新提供的表格数据)
+        // 1. 数据源 A: 最新的到课数据 (主表，决定谁在名单里)
         // ----------------------------------------------------------------------
-        const RAW_CSV_DATA = `微信昵称,第一周数学,第一周语文,第一周英语,第二周数学,第二周语文,第二周英语,手机号码
+        const ATTENDANCE_CSV = `微信昵称,第一周数学,第一周语文,第一周英语,第二周数学,第二周语文,第二周英语,手机号码
 初吻给乃烟,1小时3分钟55秒,1小时2分钟19秒,1小时21秒,1小时2分钟2秒,1小时6分钟16秒,56分钟27秒,13655556185
 A.双陈普洱🍒小兰,4分钟57秒,4分钟0秒,13秒,9分钟24秒,0秒,0秒,13826614574
 momo,0秒,0秒,0秒,0秒,0秒,0秒,13840128132
@@ -333,7 +332,271 @@ Fang,0秒,0秒,37分钟1秒,1小时1分钟37秒,1小时12分钟19秒,56分钟52�
 小娅·,0秒,0秒,0秒,0秒,0秒,0秒,15990338732`;
 
         // ----------------------------------------------------------------------
-        // 2. 辅助函数
+        // 2. 数据源 B: 历史档案数据 (包含学员真实姓名和入学成绩，作为字典查询使用)
+        // ----------------------------------------------------------------------
+        const STUDENT_INFO_CSV = `学号,微信昵称,学员姓名,联系电话,入学测试情况
+S1,A.双陈普洱🍒小兰,周嘉宁,13826614574,75
+S2,万里晴空,末末,13811679021,-
+S3,A 冉冉妈妈🍀,李若冉,18790793260,80
+S4,我又改了我的微信名😄,嘉淇,15935980720,95
+S5,金喵喵,于霏霏,18210408622,-
+S6,钟雅娜🍀,橙子,18628077185,-
+S7,二木之林,李一帆,15854683891,0
+S8,💐素素🎎,优宝,18964329725,-
+S9,ccy,甜甜,18889125760,0
+S10,初吻给乃烟,朱雨萱,13655556185,-
+S11,Le vent se lève,诗晗,19933277297,-
+S12,孜语,小柠檬,13575569205,-
+S13,欣,刘小南,17732293629,20
+S14,你若向阳春暖花开🥰🥰🥰,亦宸,17375188362,0
+S15,黄文英,崇睿,17875437332,170
+S16,hi 杨盼盼,南瓜,13600542708,140
+S17,胡家人,谢兮知,18126151765,65
+S18,舞夜\`\`源  ,馨馨,13840128132,-
+S19,快乐一生,马振昊,13602109081,0
+S20,ღHope.,-,-,-
+S21,兰心慧智,佳妍,15307054193,0
+S22,萱妈,瑾萱,18974074635,70
+S23,做自己的英雄 👑,宸宸,15369916188,-
+S24,末学,糖果,18728182530,-
+S25,阿鹂,若若,15387962430,120
+S26,solo＇,辰辰,15114588868,0
+S27,change,胡伊晗,15620512339,0
+S28,@林,余惜,18578275876,95
+S29,唐学建,闵琳淇,13765447468,-
+S30,红,肖帅帅,18591936763,140
+S31,‘宸,郑瑾辰,18705002938,-
+S32,饭粒,子越,18150078391,-
+S33,A 静待💍花开,梓熙,15333359839,0
+S34,新幸福。。,畅畅,18222823795,185
+S35,扎西卓玛-璐璐,陆雨晨,18977088333,-
+S36,ᨳ Miss婧ꢆ 💛,王雨辰,13767061515,105
+S37,彭翩,言言,15179969160,10
+S38,ʚ阿猫ɞ,橙子,16600262813,-
+S39,蜂蜜,徐诗淼,18180893323,-
+S40,A小胖宝妈咪,胖墩,15159825870,-
+S41,张小懒,刘浩楠,18184025686,-
+S42,Jennie,童浩宸,18621955455,50
+S43,雨打芭蕉,宸宸,15563500520,0
+S44,小路,Leo,18023335372,0
+S45,阿廖,小乖,15885037624,-
+S46,陈红,林妍,13965853028,105
+S47,生如夏花,锐锐,13668559547,-
+S48,🍃茶烬余香,武梦琳,19946505356,-
+S49,雨文,小超,13606851243,0
+S50,seven,夕瑶,18523321277,120
+S51,安康是福,邝彦铭,13349631178,-
+S52,暖光浅笑,菲菲,13653370861,-
+S53,Aa人保车险王芳༘,余若熙,18955261110,120
+S54,姜海,俊博,13960575059,0
+S55,洋🌸,耔茗,15736736735,125
+S56,。！,朱兮兮,17697327021,-
+S57,ঞ王雨鑫,航航,13595164135,40
+S58,Susie🐰,溪溪,13488777132,-
+S59,life is like?,小达,18191570765,-
+S60,疯狂的小猪,司文希,18751048660,-
+S61,龙飞凤舞,桐桐,13972411566,0
+S62,风筝,陈润,15259279846,0
+S63,清晨,曾子纹,13603079200,100
+S64,A大别山建筑模板桑明明,帅帅,13285649596,0
+S65,西西,陈宥圻,15260329550,0
+S66,半夏 微凉,茜茜,18110388826,0
+S67,简单就好,薛智源,18853883172,0
+S68,信仰之火 🇨🇳,坤坤,15211450598,-
+S69,青青小禾苗,小宇,18877699123,100
+S70,小柒旺🐶ぅ,雪儿,18609932020,-
+S71,半亩花田,悦悦,18854786526,60
+S72,林小芳,易游,18628096897,45
+S73,双懿,王一禾,18638525181,65
+S74,柳倩～💖💕,馨妹,15978978919,-
+S75,D,彤彤,18184741132,0
+S76,乐乐呵呵,牛奶,18500935981,0
+S77,💞 容🌴,子恒,15072548617,-
+S78,傲雪寒梅,辰宸,13389884978,-
+S79,迎辉,雨馨,13560051272,0
+S80,Angel,季宇硕,15168932942,105
+S81,Sherry,时塬鈊,13962996071,-
+S82,邹晖,邹馨宁,13874318788,130
+S83,，,子涵,13599778031,0
+S84,一沙,-,-,-
+S85,Candy,彤彤,18734429650,170
+S86,舍得,廖子诚,13540776772,0
+S87,清风徐来,歆歆,13716048303,70
+S88,甜饼,嘉豪,13807321785,90
+S89,微胖界*,佳禾,13389512921,90
+S90,虽婉~,可馨,13694867407,20
+S91,二十四桥明月夜,涵浩,15264251860,-
+S92,cynthia2015,罗景霖,15997319470,-
+S93,᭄Queenོꦿ࿐,一一,18335718679,135
+S94,@沫沫_🌈,-,-,-
+S95,祥和(YY),小靖,13602390215,65
+S96,Sunny～,-,-,-
+S97,Trubo巧翘,巧儿,13926682396,-
+S98,许夏,许夏,17755131437,0
+S99,彩彩,佳佳,13558056768,35
+S100,喜上梅稍,周书弘,13608937309,-
+S101,福囍🍒,刘辰玥,18011468692,-
+S102,茉莉,静静,16637352581,120
+S103,康 静,黄若元,18195588825,0
+S104,多姿多财🦚,赖皓泽,13970746546,105
+S105,乌日力格,欧苏和毅渃岱,15947608337,95
+S106,晨儿,布丁,13520023985,-
+S107,刘丽,城,15364186883,110
+S108,风信子,欣桐,17379323004,125
+S109,Beryl 🍀,串串,18380441062,-
+S110,塞外弦,芊芊,15872222986,150
+S111,🎀万,恬恬,15921791417,15
+S112,拾光🍃,陈琰凝,13864085620,180
+S113,奈奈,孜孜,15815229538,-
+S114,Han,夏天,13521268192,-
+S115,鸿运当头,黄兆鸿,13632475490,-
+S116,Kili,洋洋,13580550141,5
+S117,天行健,晨晨,18301171799,170
+S118,杨碧云,姜慧瑜,13984469906,70
+S119,银儿,林玥辰,13540212601,-
+S120,浪迹天涯,小宇,13625949748,165
+S121,大静静,王瑞珅,15156933353,0
+S122,银杏树,小溥,15081765986,45
+S123,快乐至上,袁赫泽,13838102028,100
+S124,柒柒,妞妞,13970325266,-
+S125,逆旅尘,小喜鹊,18826291827,-
+S126,雪见,郑治,17686998272,-
+S127,娟小娟💍,何欣怡,18659514681,120
+S128,略略略,雯雅,13590396465,60
+S129,勤,哲哲,15347312700,120
+S130,仙人掌,彬彬,13784464176,70
+S131,解霞19201589982,小珍珠,13952937887,0
+S132,Sammi,米糊,13537787762,0
+S133,勤勤,冉冉,15610276885,100
+S134,moon,艾米,15100329856,-
+S135,安格皮肤身材管理,米朵,18670079765,75
+S136,梓轩麻麻,龚梓轩,13916264137,-
+S137,陈金花,袁骏尧,13701770433,160
+S138,A 古月,亦为,18315379089,0
+S139,诗语,媛媛,18774971885,0
+S140,Simple,西西,18326960813,0
+S141,魏魏🦁🐰,玥彤,13938946431,135
+S142,Hl,辰宇,18107207550,-
+S143,淡如菊,陈喆,13754063202,95
+S144,殷姗,许海乐,-,0
+S145,梅花,朵朵,13633820561,0
+S146,Gaby,黄博,13922789319,0
+S147,xiaoli,星宇,18361241835,110
+S148,德江真贞蜂糖李种植专业合作社,甘宇晨,18984552342,0
+S149,楠楠💋,梦菡,15562376059,-
+S150,人间清醒,肖楚博,13322920139,-
+S151,山月浮酩。,赵思齐,19072868648,130
+S152,‘@ 街角旳祝福,康康,16673625018,70
+S153,River,何洛伊,18956096101,0
+S154,是卢小姐哦,思瑾,15916274718,-
+S155,生活每日向阳,笑笑,13063337039,95
+S156,刘丽莉,武乐懿,13720436986,0
+S157,妞妞,李津铌（萌萌）,17759514880,-
+S158,佳佳,西西,15810316558,-
+S159,封 墨,李墨,15515798233,150
+S160,二年级一班吴子言,子言,18886677652,0
+S161,君子🐾,刘思涵,13810467194,45
+S162,萍,李国宇,18858677806,-
+S163,无为,-,-,0
+S164,张筱玉,曹跃凌,15609092892,-
+S165,鹅蛋蛋若若,若若,15959647137,0
+S166,梅,王小宇,18209035600,130
+S167,锴锴妈,肖竣浠,13650939986,-
+S168,5858588,李震禄,13757160367,60
+S169,李强,雨彤,13809276245,0
+S170,A硕达钢材（脚手架）15003338007,硕硕,15003337100,135
+S171,ℳɬꪖꪀᧁ,唐梓睿,19298851922,0
+S172,琴琴,董瀚嵘,15872962839,-
+S173,熙👦🏻悦👧🏻,武馨悦,15660010404,5
+S174,real.life,琪琪,13568880112,-
+S175,露子,糖糖,18727160721,25
+S176,🌿,腾宝,13382903242,0
+S177,宁宁,宇新,15093600867,0
+S178,🍅番茄小天使🍅,徐文雅,18326022523,-
+S179,佩,若琳,13750244511,-
+S180,小欢喜,嘟嘟,15963107787,0
+S181,A灵芝,诚诚,13022346992,-
+S182,甜以待人,灿宝,13935637070,0
+S183,爱吃菜的肉包子,董泓霄,15617694687,75
+S184,平凡,汐汐,13879652020,150
+S185,🌈🌈sky 🌻 Yali🍭🍭,霖霖,13690556613,135
+S186,Good-luck🍎,多多,15103119992,60
+S187,🌾,彤彤,18950427273,125
+S188,👑X.xiang💫,甜馨,13988829011,5
+S189,Yumi,Moony,-,-
+S190,花jiang🌈晨曦🔆,Daniel,13732237327,185
+S191,～.～,李知安,18213676445,0
+S192,卢克,卢梓轩,15019475685,155
+S193,李姐,许昌缘,13977010113,75
+S194,🍒 若熏,小钟,13765269807,-
+S195,🔔钱包响叮当,瑾萱,13631747978,155
+S196,快处快赔卢艳,彭玥萱,18975843280,0
+S197,清晨(韦宇晨15974246178),韦宇晨,15974246178,0
+S198,(・、・)耘,耘儿,18353506317,0
+S199,风雨天涯中医针灸,廖婧雯,18781079661,0
+S200,爱谁谁@,刘佩其,13994374531,-
+S201,时间的朋友,李小优,13540629993,0
+S202,心向阳～无所畏,墨墨,18092921706,75
+S203,白河岸边🌷,果果,18337658526,120
+S204,静看日落烟霞,王小靖,18834339933,150
+S205,A Q宝宝萍 |母婴儿童健康调理师,沈伊桐,15768091198,0
+S206,@林,余惜,18578275876,-
+S207,🌾,彤彤,18950427273,-
+S208,🌿(腾宝13382903242),王豫腾,13382903242,0
+S209,永霞,陈恒臻,15008960867,120
+S210,郑晓喵🍀(黄熠安13435289624),黄熠安,13435289624,140
+S211,楠楠,闫之珩,15165001631,135
+S212,启悦儿,大博,18222918751,-
+S213,果果,陈昱睿,13887890605,145
+S214,summer森,Q弹（tan）,13711745853,0
+S215,淡如菊(陈喆13754063202),陈喆,13754063202,95
+S216,💰小财迷🧧,硕硕,-,-
+S217,斑斓(贝贝 13968538380),贝贝,13968538380,-
+S218,丽丽|社团&快递,豆豆,13862564887,120
+S219,激到你生欧欧女士,梓辰,18302098414,-
+S220,琹,涵宇,13546206232,0
+S221,李苗💎,小周末,15986434862,0
+S222,沙子,Peter,15907155257,140
+S223,天星托管·核心学能🇨🇳徐小燕(徐鹏腾13599159188),徐鹏腾,13599159188,75
+S224,稻田(一诺 15070980472),一诺,15070980472,5
+S225,垒歌,致远,13908704312,180
+S226,安吉尔净水器-黄～珍18779579619,晶晶,18779579619,0
+S227,Catrina,赵瑾桐,13450890469,0
+S228,从头开始,汤浩,18362547919,60
+S229,大果粒,嘉栋,18764616139,160
+S230,hf,吕佳一,15386096178,150
+S231,暖暖的,秉勤,15837366824,120
+S232,~,翰哥哥,15978229228,-
+S233,月姑娘,篼篼,13388909110,40
+S234,Letice🌸,花生米,13636466645,-
+S235,🍐💋 🍐,陈美琪,15938263770,40
+S236,向阳,芊芊,15173919201,120
+S237,蕾...💋,张迪耶,15981788381,-
+S238,小雨嘉,小雨,13961863306,110
+S239,桃李不言,小糖,15911080445,0
+S240,乘龙,圣圣,19872909828,-
+S241,Ivy,阳阳,13922238770,120
+S242,冬天那把火,,18101348350,100
+S243,叙小馆13310971742,楚佳琦,13310971742,-
+S244,Dan,益宁,18910892070,-
+S245,岁月凝香,轩轩,18559648163,0
+S246,Cherry,梓怡,13928852315,-
+S247,张霞,杨义鑫,13864645228,80
+S248,CXJ,轩轩,13485185292,-
+S249,清风飞舞,王小宇,18209035600,130
+S250,爺們★僦這脾気,邱俊博,13960575059,0
+S251,💰小财迷🧧,硕硕,13642137022,-
+S252,橙子,黄梓霖,13825963753,75
+S253,🌈乔妹儿,涵涵,19350561818,180
+S254,Tony杰,熙杰,19262070665,-
+S255,丝雨,佟羽霏（霏霏）,18911562688,0
+S256,哈喽贝比早教Rita 杨老师💕,语桐,15007652517,65
+S257,微雨轻尘-云南专线,檀小包,18203615027,0
+S258,eiwa,泡泡,13181972908,170
+S259,Yumi,MOONY,18819020184,150`;
+
+        // ----------------------------------------------------------------------
+        // 3. 辅助函数
         // ----------------------------------------------------------------------
         const parseCSV = (csvText) => {
             const lines = csvText.split('\n').filter(line => line.trim() !== '');
@@ -351,23 +614,26 @@ Fang,0秒,0秒,37分钟1秒,1小时1分钟37秒,1小时12分钟19秒,56分钟52�
         const parseDuration = (durationStr) => {
             if (!durationStr || durationStr === '0秒' || durationStr === '0') return 0;
             let totalMinutes = 0;
-            
             const hourMatch = durationStr.match(/(\d+)小时/);
             if (hourMatch) totalMinutes += parseInt(hourMatch[1]) * 60;
-            
             const minMatch = durationStr.match(/(\d+)分/);
             if (minMatch) totalMinutes += parseInt(minMatch[1]);
-            
             const secMatch = durationStr.match(/(\d+)秒/);
             if (secMatch && parseInt(secMatch[1]) >= 30) totalMinutes += 0.5;
-
             return totalMinutes;
         };
 
         const isAttended = (durationStr) => {
             const minutes = parseDuration(durationStr);
-            // 降低标准：30分钟以上算完成
-            return minutes >= 30;
+            return minutes >= 30; // 标准：30分钟以上
+        };
+
+        const calculateScore = (data) => {
+            const scores = data
+                .map(d => parseFloat(d['入学测试情况']))
+                .filter(s => !isNaN(s) && s > 0);
+            if (scores.length === 0) return 0;
+            return (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
         };
 
         const calculateAttendance = (data, durationKey) => {
@@ -376,7 +642,7 @@ Fang,0秒,0秒,37分钟1秒,1小时1分钟37秒,1小时12分钟19秒,56分钟52�
         };
 
         // ----------------------------------------------------------------------
-        // 3. 主组件
+        // 4. 主组件
         // ----------------------------------------------------------------------
         const App = () => {
             const [data, setData] = useState([]);
@@ -386,26 +652,57 @@ Fang,0秒,0秒,37分钟1秒,1小时1分钟37秒,1小时12分钟19秒,56分钟52�
             const [filterType, setFilterType] = useState('all');
             const [currentWeek, setCurrentWeek] = useState('W2');
 
+            // 初始化：合并数据
             useEffect(() => {
-                const parsedData = parseCSV(RAW_CSV_DATA);
-                setData(parsedData);
+                // 1. 解析到课数据 (主表)
+                const attendanceList = parseCSV(ATTENDANCE_CSV);
+                // 2. 解析档案数据 (字典)
+                const infoList = parseCSV(STUDENT_INFO_CSV);
+                
+                // 3. 构建快速查找字典 (Map)
+                // 优先用电话匹配，其次用昵称匹配
+                const infoByPhone = {};
+                const infoByNick = {};
+                infoList.forEach(info => {
+                    if (info['联系电话']) infoByPhone[info['联系电话']] = info;
+                    if (info['微信昵称']) infoByNick[info['微信昵称']] = info;
+                });
+
+                // 4. 合并逻辑
+                const mergedData = attendanceList.map(item => {
+                    const phone = item['手机号码'];
+                    const nick = item['微信昵称'];
+                    
+                    // 尝试匹配档案
+                    let matchedInfo = null;
+                    if (phone && infoByPhone[phone]) {
+                        matchedInfo = infoByPhone[phone];
+                    } else if (nick && infoByNick[nick]) {
+                        matchedInfo = infoByNick[nick];
+                    }
+
+                    return {
+                        ...item,
+                        '学员姓名': matchedInfo ? matchedInfo['学员姓名'] : nick, // 没匹配到就用昵称
+                        '入学测试情况': matchedInfo ? matchedInfo['入学测试情况'] : '-', // 没匹配到就显示 -
+                        '学号': matchedInfo ? matchedInfo['学号'] : '-'
+                    };
+                });
+
+                setData(mergedData);
             }, []);
 
             const stats = useMemo(() => {
                 if (data.length === 0) return null;
-                // 注意：这里根据新表格的表头进行字段匹配
                 const weekLabel = currentWeek === 'W1' ? '第一周' : '第二周';
-                
-                // 动态获取字段名
-                const chineseKey = currentWeek === 'W1' ? '第一周语文' : '第二周语文';
-                const mathKey = currentWeek === 'W1' ? '第一周数学' : '第二周数学';
-                const englishKey = currentWeek === 'W1' ? '第一周英语' : '第二周英语';
+                const prefix = currentWeek === 'W1' ? '第一周' : '第二周';
                 
                 return {
                     totalStudents: data.length,
-                    chineseAttendance: calculateAttendance(data, chineseKey),
-                    mathAttendance: calculateAttendance(data, mathKey),
-                    englishAttendance: calculateAttendance(data, englishKey),
+                    avgScore: calculateScore(data), // 计算平均分
+                    chineseAttendance: calculateAttendance(data, prefix + '语文'),
+                    mathAttendance: calculateAttendance(data, prefix + '数学'),
+                    englishAttendance: calculateAttendance(data, prefix + '英语'),
                     weekLabel
                 };
             }, [data, currentWeek]);
@@ -417,12 +714,12 @@ Fang,0秒,0秒,37分钟1秒,1小时1分钟37秒,1小时12分钟19秒,56分钟52�
                     const lowerTerm = searchTerm.toLowerCase();
                     filtered = filtered.filter(item => 
                         (item['微信昵称'] && item['微信昵称'].toLowerCase().includes(lowerTerm)) ||
+                        (item['学员姓名'] && item['学员姓名'].toLowerCase().includes(lowerTerm)) ||
                         (item['手机号码'] && item['手机号码'].includes(lowerTerm))
                     );
                 }
 
                 if (filterType === 'attended') {
-                    // 只要有一周的任一课程达标就算
                     filtered = filtered.filter(item => 
                         isAttended(item['第一周语文']) || isAttended(item['第一周数学']) || isAttended(item['第一周英语']) ||
                         isAttended(item['第二周语文']) || isAttended(item['第二周数学']) || isAttended(item['第二周英语'])
@@ -433,8 +730,14 @@ Fang,0秒,0秒,37分钟1秒,1小时1分钟37秒,1小时12分钟19秒,56分钟52�
                     filtered.sort((a, b) => {
                         let aValue, bValue;
 
-                        // 包含"周"字的字段一般是时长
-                        if (sortConfig.key.includes('周')) {
+                        if (['入学测试情况'].includes(sortConfig.key)) {
+                             // 处理分数排序，非数字排最后
+                            const aNum = parseFloat(a[sortConfig.key]);
+                            const bNum = parseFloat(b[sortConfig.key]);
+                            aValue = isNaN(aNum) ? -1 : aNum;
+                            bValue = isNaN(bNum) ? -1 : bNum;
+                        } else if (sortConfig.key.includes('周')) {
+                            // 处理时长排序
                             aValue = parseDuration(a[sortConfig.key]);
                             bValue = parseDuration(b[sortConfig.key]);
                         } else {
@@ -525,7 +828,7 @@ Fang,0秒,0秒,37分钟1秒,1小时1分钟37秒,1小时12分钟19秒,56分钟52�
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
                                     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-start justify-between">
                                         <div>
                                             <p className="text-sm font-medium text-gray-500 mb-1">总学员人数</p>
@@ -533,6 +836,17 @@ Fang,0秒,0秒,37分钟1秒,1小时1分钟37秒,1小时12分钟19秒,56分钟52�
                                         </div>
                                         <div className="p-3 bg-blue-50 rounded-lg text-blue-600">
                                             <User size={24} />
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-start justify-between">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-500 mb-1">摸底测平均分</p>
+                                            <h3 className="text-3xl font-bold text-gray-900">{stats.avgScore}</h3>
+                                            <p className="text-xs text-gray-400 mt-2">满分 215 分</p>
+                                        </div>
+                                        <div className="p-3 bg-purple-50 rounded-lg text-purple-600">
+                                            <Calculator size={24} />
                                         </div>
                                     </div>
 
@@ -580,7 +894,7 @@ Fang,0秒,0秒,37分钟1秒,1小时1分钟37秒,1小时12分钟19秒,56分钟52�
                                 <input
                                     type="text"
                                     className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm"
-                                    placeholder="搜索姓名或手机号..."
+                                    placeholder="搜索姓名、昵称或手机号..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
@@ -604,9 +918,13 @@ Fang,0秒,0秒,37分钟1秒,1小时1分钟37秒,1小时12分钟19秒,56分钟52�
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">序号</th>
-                                            <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">微信昵称 (姓名)</th>
-                                            <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">手机号码</th>
+                                            <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => requestSort('学员姓名')}>
+                                                <div className="flex items-center gap-1">学员姓名 {getSortIcon('学员姓名')}</div>
+                                            </th>
+                                            <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">微信昵称 / 手机</th>
+                                            <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => requestSort('入学测试情况')}>
+                                                <div className="flex items-center gap-1">入学成绩 {getSortIcon('入学测试情况')}</div>
+                                            </th>
                                             
                                             <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider bg-blue-50 border-l border-r border-blue-100">第一周 (语/数/英)</th>
                                             <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider bg-green-50 border-r border-green-100">第二周 (语/数/英)</th>
@@ -619,11 +937,24 @@ Fang,0秒,0秒,37分钟1秒,1小时1分钟37秒,1小时12分钟19秒,56分钟52�
                                         {processedData.length > 0 ? (
                                             processedData.map((student, index) => (
                                                 <tr key={index} className="hover:bg-blue-50 transition-colors cursor-pointer" onClick={() => setSelectedStudent(student)}>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {index + 1}
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                                                        {student['学员姓名']}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">{student['微信昵称'] || '-'}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{student['手机号码'] || '-'}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        <div className="font-medium text-gray-900">{student['微信昵称']}</div>
+                                                        <div className="text-xs font-mono mt-0.5">{student['手机号码']}</div>
+                                                    </td>
+                                                    
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                            parseFloat(student['入学测试情况']) >= 160 ? 'bg-green-100 text-green-800' :
+                                                            parseFloat(student['入学测试情况']) >= 120 ? 'bg-blue-100 text-blue-800' :
+                                                            parseFloat(student['入学测试情况']) > 0 ? 'bg-yellow-100 text-yellow-800' :
+                                                            'bg-gray-100 text-gray-800'
+                                                        }`}>
+                                                            {student['入学测试情况']}
+                                                        </span>
+                                                    </td>
                                                     
                                                     {/* Week 1 */}
                                                     <td className="px-4 py-4 border-l border-r border-blue-100 bg-blue-50/30">
@@ -680,13 +1011,19 @@ Fang,0秒,0秒,37分钟1秒,1小时1分钟37秒,1小时12分钟19秒,56分钟52�
                                                 
                                                 <div className="bg-blue-50 p-4 rounded-lg mb-6">
                                                     <div className="grid grid-cols-2 gap-4">
-                                                        <div><p className="text-xs text-blue-500 uppercase tracking-wider font-semibold">昵称 / 姓名</p><p className="text-lg font-bold text-gray-900">{selectedStudent['微信昵称'] || '未知'}</p></div>
-                                                        <div><p className="text-xs text-blue-500 uppercase tracking-wider font-semibold">手机号码</p><p className="text-base font-mono text-gray-700">{selectedStudent['手机号码'] || '-'}</p></div>
+                                                        <div><p className="text-xs text-blue-500 uppercase tracking-wider font-semibold">姓名</p><p className="text-lg font-bold text-gray-900">{selectedStudent['学员姓名']}</p></div>
+                                                        <div><p className="text-xs text-blue-500 uppercase tracking-wider font-semibold">微信昵称</p><p className="text-base text-gray-700">{selectedStudent['微信昵称']}</p></div>
+                                                        <div className="col-span-2"><p className="text-xs text-blue-500 uppercase tracking-wider font-semibold">手机号码</p><p className="text-base font-mono text-gray-700">{selectedStudent['手机号码']}</p></div>
                                                     </div>
                                                 </div>
 
                                                 <div className="max-h-[60vh] overflow-y-auto pr-2">
                                                     
+                                                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-4">
+                                                        <div className="flex items-center gap-3"><Calculator className="text-purple-500" /><span className="font-medium">入学测试成绩</span></div>
+                                                        <span className={`text-lg font-bold ${parseFloat(selectedStudent['入学测试情况']) >= 120 ? 'text-green-600' : 'text-gray-900'}`}>{selectedStudent['入学测试情况']}</span>
+                                                    </div>
+
                                                     {/* W1 */}
                                                     <h4 className="font-medium text-gray-900 mt-6 mb-2 flex items-center gap-2"><span className="w-1.5 h-4 bg-blue-500 rounded-full"></span>第一周学习情况</h4>
                                                     <div className="space-y-2">
