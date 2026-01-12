@@ -1,0 +1,120 @@
+import pandas as pd
+import re
+
+# File paths (Assuming files are in the current directory)
+file_main = '斗半匠期末冲刺课 学情表.xlsx - 三年级.csv'
+file_test = '三年级期末冲刺名师伴学营摸底测成绩单.2026-01-07_16-40-36.Prz0ML.xlsx - Sheet1.csv'
+# This is the NEW file containing Week 1 AND Week 2 data
+file_courses_v2 = '三年级期末冲刺名师伴学营.2026-01-12_14-12-12.qEei5D.xlsx - 课程学员数据.csv'
+
+def clean_phone(val):
+    if pd.isna(val): return ''
+    return re.sub(r'\D', '', str(val))
+
+def clean_str(val):
+    if pd.isna(val): return ''
+    return str(val).strip().replace('"', '').replace('`', '')
+
+# Load DataFrames
+df_main = pd.read_csv(file_main, dtype=str)
+df_test = pd.read_csv(file_test, dtype=str)
+df_courses = pd.read_csv(file_courses_v2, dtype=str)
+
+# Clean phones
+df_main['phone_clean'] = df_main['联系电话'].apply(clean_phone)
+df_test['phone_clean'] = df_test['手机号码'].apply(clean_phone)
+df_courses['phone_clean'] = df_courses['手机号码'].apply(clean_phone)
+
+# Mappings
+test_score_map = dict(zip(df_test['phone_clean'], df_test['得分']))
+
+# Create Course Data Map (Week 1 & Week 2)
+# Mapping column names from the NEW CSV file
+cols_map = {
+    'Math_W1': '乘除运算与典型应用题学习时长',
+    'Chi_W1': '字词句系统拔高训练学习时长',
+    'Eng_W1': '3大王牌英语句型精讲学习时长',
+    'Math_W2': '新概念与易错点攻克:分数与重量学习时长',
+    'Chi_W2': '阅读高分秘诀：精读+答题模板学习时长',
+    'Eng_W2': '听力&对话：“秒反应”训练学习时长'
+}
+
+course_data_map = {}
+for _, row in df_courses.iterrows():
+    p = row['phone_clean']
+    if not p: continue
+    
+    course_data_map[p] = {
+        'Math_W1': clean_str(row.get(cols_map['Math_W1'], '0秒')),
+        'Chi_W1': clean_str(row.get(cols_map['Chi_W1'], '0秒')),
+        'Eng_W1': clean_str(row.get(cols_map['Eng_W1'], '0秒')),
+        'Math_W2': clean_str(row.get(cols_map['Math_W2'], '0秒')),
+        'Chi_W2': clean_str(row.get(cols_map['Chi_W2'], '0秒')),
+        'Eng_W2': clean_str(row.get(cols_map['Eng_W2'], '0秒')),
+        'Nickname': clean_str(row.get('微信昵称', ''))
+    }
+
+# Build Final Data List
+final_rows = []
+processed_phones = set()
+
+# Header for the final CSV string
+header = "学号,微信昵称,学员姓名,联系电话,入学测试情况,语文时长_W1,数学时长_W1,英语时长_W1,语文时长_W2,数学时长_W2,英语时长_W2"
+final_rows.append(header)
+
+# 1. Existing Students
+for _, row in df_main.iterrows():
+    p = row['phone_clean']
+    if not p: continue
+    processed_phones.add(p)
+    
+    c = course_data_map.get(p, {})
+    
+    line = [
+        clean_str(row.get('学号', '')),
+        clean_str(row.get('微信昵称', '')),
+        clean_str(row.get('学员姓名', '')),
+        clean_str(row.get('联系电话', '')),
+        clean_str(test_score_map.get(p, '-')),
+        c.get('Chi_W1', '0秒'),
+        c.get('Math_W1', '0秒'),
+        c.get('Eng_W1', '0秒'),
+        c.get('Chi_W2', '0秒'),
+        c.get('Math_W2', '0秒'),
+        c.get('Eng_W2', '0秒')
+    ]
+    final_rows.append(",".join(line))
+
+# 2. New Students (found in course data but not main list)
+new_count = 1
+for _, row in df_courses.iterrows():
+    p = row['phone_clean']
+    if not p or p in processed_phones: continue
+    processed_phones.add(p)
+    
+    # Try to find name in test scores
+    name = ''
+    test_match = df_test[df_test['phone_clean'] == p]
+    if not test_match.empty:
+        name = clean_str(test_match.iloc[0]['真实姓名'])
+    
+    c = course_data_map.get(p, {})
+    
+    line = [
+        f"New_{new_count}",
+        c.get('Nickname', ''),
+        name,
+        clean_str(row.get('手机号码', '')),
+        clean_str(test_score_map.get(p, '-')),
+        c.get('Chi_W1', '0秒'),
+        c.get('Math_W1', '0秒'),
+        c.get('Eng_W1', '0秒'),
+        c.get('Chi_W2', '0秒'),
+        c.get('Math_W2', '0秒'),
+        c.get('Eng_W2', '0秒')
+    ]
+    final_rows.append(",".join(line))
+    new_count += 1
+
+# Output the CSV string
+print("\n".join(final_rows))
